@@ -1,0 +1,109 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String       @id @default(cuid())
+  email        String       @unique
+  name         String?
+  passwordHash String
+  createdAt    DateTime     @default(now())
+  assets       Asset[]
+  memberships  TeamMember[]
+  shareLinks   ShareLink[]
+}
+
+model Team {
+  id        String       @id @default(cuid())
+  name      String
+  createdAt DateTime     @default(now())
+  members   TeamMember[]
+  assets    Asset[]
+  folders   Folder[]
+}
+
+model TeamMember {
+  id     String @id @default(cuid())
+  role   String // owner | member
+  userId String
+  teamId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  team   Team   @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, teamId])
+  @@index([teamId])
+}
+
+model Folder {
+  id        String   @id @default(cuid())
+  name      String
+  userId    String?
+  teamId    String?
+  createdAt DateTime @default(now())
+  team      Team?    @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  assets    Asset[]
+
+  @@index([userId])
+  @@index([teamId])
+}
+
+model Asset {
+  id          String     @id @default(cuid())
+  title       String
+  description String     @db.Text
+  objectKey   String
+  thumbKey    String
+  mimeType    String
+  size        Int
+  width       Int?
+  height      Int?
+  tags        String     @db.Text // comma-separated for MVP
+  embedding   String?    @db.LongText // JSON number[]
+  aiStatus    String     @default("pending") // pending | done | failed | skipped
+  userId      String
+  teamId      String?
+  folderId    String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  team        Team?      @relation(fields: [teamId], references: [id], onDelete: SetNull)
+  folder      Folder?    @relation(fields: [folderId], references: [id], onDelete: SetNull)
+  shareLinks  ShareLink[]
+  aiJobs      AiJob[]
+
+  @@index([userId, createdAt])
+  @@index([teamId])
+  @@index([aiStatus])
+}
+
+model ShareLink {
+  id           String    @id @default(cuid())
+  token        String    @unique
+  passwordHash String?
+  expiresAt    DateTime?
+  assetId      String
+  createdById  String
+  createdAt    DateTime  @default(now())
+  asset        Asset     @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  createdBy    User      @relation(fields: [createdById], references: [id], onDelete: Cascade)
+
+  @@index([assetId])
+}
+
+model AiJob {
+  id        String   @id @default(cuid())
+  assetId   String
+  status    String   @default("queued") // queued | running | done | failed
+  attempts  Int      @default(0)
+  lastError String?  @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  asset     Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  @@index([status, createdAt])
+}
