@@ -9,8 +9,14 @@ const credentialsSchema = z.object({
   password: z.string().min(6),
 });
 
-export const { handlers, auth, signIn, signOut } = NextAuth({
+const authSecret =
+  process.env.AUTH_SECRET ||
+  process.env.NEXTAUTH_SECRET ||
+  "dev-pixelvault-fallback-secret-change-me";
+
+export const { handlers, auth: rawAuth, signIn, signOut } = NextAuth({
   trustHost: true,
+  secret: authSecret,
   session: { strategy: "jwt" },
   pages: {
     signIn: "/login",
@@ -50,3 +56,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
   },
 });
+
+/** 旧 Cookie / 密钥不一致时 Auth.js 会抛错，避免整页红屏 */
+export async function auth() {
+  try {
+    return await rawAuth();
+  } catch {
+    return null;
+  }
+}

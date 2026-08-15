@@ -41,7 +41,7 @@ export default async function HomePage() {
           <div className="mt-8 flex gap-3">
             <Link
               href="/register"
-              className="rounded-full bg-[var(--ink)] px-6 py-3 text-white"
+              className="rounded-full bg-[var(--ink)] px-6 py-3 font-medium text-[#f7f3ea]"
             >
               开始使用
             </Link>

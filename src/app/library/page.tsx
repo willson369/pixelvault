@@ -53,20 +53,26 @@ export default function LibraryPage() {
 
   async function onUpload(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    const form = e.currentTarget;
     setLoading(true);
     setMsg("");
-    const fd = new FormData(e.currentTarget);
-    if (teamId) fd.set("teamId", teamId);
-    const res = await fetch("/api/assets/upload", { method: "POST", body: fd });
-    const data = await res.json();
-    setLoading(false);
-    if (!res.ok) {
-      setMsg(data.error + (data.hint ? `（${data.hint}）` : ""));
-      return;
+    try {
+      const fd = new FormData(form);
+      if (teamId) fd.set("teamId", teamId);
+      const res = await fetch("/api/assets/upload", { method: "POST", body: fd });
+      const data = await res.json();
+      if (!res.ok) {
+        setMsg(data.error + (data.hint ? `（${data.hint}）` : ""));
+        return;
+      }
+      setMsg("上传成功，AI 打标已排队");
+      form.reset();
+      await load();
+    } catch {
+      setMsg("上传失败，请重试");
+    } finally {
+      setLoading(false);
     }
-    setMsg("上传成功，AI 打标已排队");
-    e.currentTarget.reset();
-    setTimeout(() => void load(), 800);
   }
 
   async function createTeam() {
@@ -80,23 +86,33 @@ export default function LibraryPage() {
     if (res.ok) {
       await loadTeams();
       setMsg("团队已创建");
+    } else {
+      setMsg("创建团队失败");
     }
   }
 
   async function shareAsset(assetId: string) {
-    const res = await fetch("/api/share", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ assetId, expiresInHours: 72 }),
-    });
-    const data = await res.json();
-    if (!res.ok) {
-      setMsg(data.error || "分享失败");
-      return;
+    try {
+      const res = await fetch("/api/share", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ assetId, expiresInHours: 72 }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setMsg(data.error || "分享失败");
+        return;
+      }
+      const url = `${window.location.origin}${data.url}`;
+      try {
+        await navigator.clipboard.writeText(url);
+        setMsg(`分享链接已复制：${url}`);
+      } catch {
+        setMsg(`分享链接：${url}`);
+      }
+    } catch {
+      setMsg("分享失败，请重试");
     }
-    const url = `${window.location.origin}${data.url}`;
-    await navigator.clipboard.writeText(url);
-    setMsg(`分享链接已复制：${url}`);
   }
 
   return (
