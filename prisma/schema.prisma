@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "mysql"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -53,26 +53,26 @@ model Folder {
 }
 
 model Asset {
-  id          String     @id @default(cuid())
+  id          String      @id @default(cuid())
   title       String
-  description String     @db.Text
+  description String      @db.Text
   objectKey   String
   thumbKey    String
   mimeType    String
   size        Int
   width       Int?
   height      Int?
-  tags        String     @db.Text // comma-separated for MVP
-  embedding   String?    @db.LongText // JSON number[]
-  aiStatus    String     @default("pending") // pending | done | failed | skipped
+  tags        String      @db.Text
+  embedding   String?     @db.Text
+  aiStatus    String      @default("pending")
   userId      String
   teamId      String?
   folderId    String?
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
-  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  team        Team?      @relation(fields: [teamId], references: [id], onDelete: SetNull)
-  folder      Folder?    @relation(fields: [folderId], references: [id], onDelete: SetNull)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  team        Team?       @relation(fields: [teamId], references: [id], onDelete: SetNull)
+  folder      Folder?     @relation(fields: [folderId], references: [id], onDelete: SetNull)
   shareLinks  ShareLink[]
   aiJobs      AiJob[]
 
@@ -98,7 +98,7 @@ model ShareLink {
 model AiJob {
   id        String   @id @default(cuid())
   assetId   String
-  status    String   @default("queued") // queued | running | done | failed
+  status    String   @default("queued")
   attempts  Int      @default(0)
   lastError String?  @db.Text
   createdAt DateTime @default(now())
