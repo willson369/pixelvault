@@ -50,3 +50,6 @@ next-env.d.ts
 .windsurf/
 skills-lock.json
 /src/generated/prisma
+
+.vercel
+.env*
